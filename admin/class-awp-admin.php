@@ -96,9 +96,8 @@ if ( !class_exists( 'AWP_Admin' ) ) {
 			 * between the defined hooks and the functions defined in this
 			 * class.
 			 */
-
-			wp_enqueue_script( $this->awp, plugin_dir_url( __FILE__ ) . 'js/awp-admin.js', array( 'jquery' ), $this->version, false );
-
+			
+			
 		}
 
 		public function options_page() {
@@ -119,11 +118,56 @@ if ( !class_exists( 'AWP_Admin' ) ) {
 				return;
 			}
 
-			echo '<h1>Teste</h1>';
+			_e('<h1>Teste</h1>', 'integracao-amadeus-wp');
+			_e('<p>É de extrema importância que o slug dos produtos não sejam alterados de modo a evitar duplicações.</p>', 'integracao-amadeus-wp');
 
 			$new_courses_api_response = AWP_Api_Caller::output('GET', 'https://amadeuslms.cf/api/subjects/list_subjects/');
 			$new_courses_array = $new_courses_api_response['data']['subjects'];
 
+			$unsynchronized_courses = array();
+			foreach($new_courses_array as $course_info) {
+				$args = array(
+					'name'        => $course_info['slug'],
+					'post_type'   => 'product',
+					'post_status' => array('publish', 'future', 'draft', 'pending', 'private', 'trash', 'auto-draft'),
+					'numberposts' => 1
+				  );
+				$course_exists = get_posts($args);
+
+				if( empty($course_exists) ) {
+					array_push($unsynchronized_courses, $course_info);
+				}
+			}
+
+			wp_register_script( $this->awp, plugin_dir_url( __FILE__ ) . 'js/awp-admin-ajax.js');
+			wp_enqueue_script( $this->awp, plugin_dir_url( __FILE__ ) . 'js/awp-admin-ajax.js', array( 'jquery' ), null, false );
+			wp_localize_script($this->awp, 'ajax_data', 
+				array( 
+					'url' => admin_url('admin-ajax.php'),
+					'unsynchronized_courses' => $unsynchronized_courses
+				)
+			);
+
+
+			if($unsynchronized_courses != 0) {
+
+				_e(sprintf('<p>Existem %d novos cursos que não foram sincronizados. Selecione abaixo os cursos que devem ser importados:</p>', sizeof($unsynchronized_courses)), 'integracao-amadeus-wp');
+				
+				$html = '<form id="courses" action="add_new_courses">';
+				foreach ( $unsynchronized_courses as $course ) {
+					$html .= '<input type="checkbox" id="' . $course['slug'] . '" name="' . $course['slug'] . '" value="' . $course['slug'] . '"><label for="' . $course['slug'] . '">' . $course['name'] . '</label><br>';//printf('<input type="checkbox" id="%s" name="%s" value="%s"><label for="%s">%s</label><br>', $course['slug'], $course['slug'], $course['slug'], $course['slug'], $course['name']);
+				}
+				$html .= '<input type="submit" value="Importar Cursos" class="button"></form><div id="ajax_response"></div>';
+
+				echo $html;
+			
+			} else {
+
+				_e('<p>Não há novos cursos no Amadeus</p>', 'integracao-amadeus-wp');
+
+			}
+/*
+           
 			foreach($new_courses_array as $course_info) {
 
 				$args = array(
@@ -133,28 +177,33 @@ if ( !class_exists( 'AWP_Admin' ) ) {
 					'numberposts' => 1
 				  );
 				$course_exists = get_posts($args);
-
 				
-
-				if( isset($course_exists) ) {
-					echo 'passou | ';
-					break;
+				if( !empty($course_exists) ) {
+					continue;
 				}
-/*
-				echo $course_info['name'];
+
 				$product = new WC_Product_Simple();
 				$product->set_name( $course_info['name'] );
 				$product->set_slug( $course_info['slug'] );
 				$product->set_status( 'publish' ); 
 				$product->set_catalog_visibility( 'visible' );
-				$product->set_price( 19.99 );
-				$product->set_regular_price( 19.99 );
+				$product->$course_info['price'];
+				$product->$course_info['price'];
 				$product->set_sold_individually( true );
 				//$product->set_image_id( $image_id );
 				$product->set_downloadable( false );
 				$product->set_virtual( true );
-				$product->save(); */
+				$product->set_description( $course_info['description_brief'] );
+				$product->save(); 
+			}*/
+			if ( isset( $_GET['settings-updated'] ) ) {
+				// add settings saved message with the class of "updated"
+				add_settings_error( 'wporg_messages', 'wporg_message', __( 'Settings Saved', 'wporg' ), 'updated' );
 			}
+		 
+			// show error/update messages
+			settings_errors( 'wporg_messages' );
+
 		}
 	}
 }

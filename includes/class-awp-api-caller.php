@@ -16,7 +16,7 @@
  * @subpackage AWP/admin
  * @author     Talita Mota <talita_mota@outlook.com>
  */
-//if ( !class_exists( 'AWP_Api_Caller' ) ) {
+if ( !class_exists( 'AWP_Api_Caller' ) ) {
 	class AWP_Api_Caller {
         
         public static function output($method, $url, $data = false)
@@ -56,4 +56,4 @@
             return json_decode($result, true);
         }
     }
-//}
+}

@@ -118,6 +118,11 @@ if ( !class_exists( 'AWP' ) ) {
 			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-awp-api-caller.php';
 
 			/**
+			 * The class responsible for run ajax.
+			 */
+			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-awp-ajax.php';
+
+			/**
 			 * The class responsible for defining all actions that occur in the admin area.
 			 */
 			require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-awp-admin.php';
@@ -166,6 +171,9 @@ if ( !class_exists( 'AWP' ) ) {
 			$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
 
 			$this->loader->add_action( 'admin_menu', $plugin_admin, 'options_page' );
+
+			$this->loader->add_action( 'wp_ajax_add_new_courses', 'AWP_Ajax', 'add_new_courses' );
+			$this->loader->add_action( 'wp_ajax_nopriv_add_new_courses', 'AWP_Ajax', 'add_new_courses' );
 
 		}
 
